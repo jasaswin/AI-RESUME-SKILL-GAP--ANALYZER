@@ -1,0 +1,7 @@
+{
+  "py": "python",
+  "js": "javascript",
+  "node": "nodejs",
+  "ml": "machine learning",
+  "dl": "deep learning"
+}

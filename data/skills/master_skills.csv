@@ -1,0 +1,29 @@
+skill,category
+python,language
+java,language
+javascript,language
+sql,language
+html,language
+css,language
+c,language
+c++,language
+
+django,framework
+flask,framework
+spring,framework
+react,framework
+nodejs,framework
+
+aws,tool
+docker,tool
+kubernetes,tool
+git,tool
+github,tool
+power bi,tool
+tableau,tool
+excel,tool
+
+machine learning,concept
+data analysis,concept
+deep learning,concept
+nlp,concept
