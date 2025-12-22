@@ -141,7 +141,7 @@ class RoadmapGenerator:
         """
         difficulty_level = self.difficulty_engine.get_difficulty_level(skill)
         predicted_time = self.model.predict([[difficulty_level]])[0]
-        return round(predicted_time, 1)
+        return float(round(predicted_time, 1))
 
     def generate_roadmap(self, missing_skills: list) -> list:
         """

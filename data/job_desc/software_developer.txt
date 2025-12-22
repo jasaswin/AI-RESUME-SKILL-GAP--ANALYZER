@@ -1,0 +1,35 @@
+Software Developer
+
+Role Overview
+We are looking for a Software Developer with strong problem-solving skills
+and a solid foundation in data structures and algorithms. The candidate
+should be able to design efficient solutions and write clean, maintainable code.
+
+Core Skills (Mandatory)
+programming fundamentals
+data structures
+algorithms
+problem solving
+object oriented programming
+java or python or c++
+arrays
+strings
+linked list
+stack
+queue
+
+Good to Have (Optional)
+dynamic programming
+graph algorithms
+database fundamentals
+sql
+git
+system design (basic)
+rest apis
+
+Responsibilities
+analyze problems and design optimal solutions
+implement efficient algorithms
+optimize code for time and space complexity
+participate in coding interviews and assessments
+collaborate with team members on software projects

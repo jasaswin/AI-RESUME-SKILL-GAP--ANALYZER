@@ -1,5 +1,15 @@
-Required skills include javascript, react, nodejs, html, css, git, github.
+required skills
+javascript
+react
+nodejs
+express
+mongodb
+html
+css
+git
+github
 
-Must have experience with full stack web development using javascript and react.
-
-Good to have experience with aws and docker.
+good to have
+aws
+docker
+ci cd
