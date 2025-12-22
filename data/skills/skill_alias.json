@@ -3,5 +3,7 @@
   "js": "javascript",
   "node": "nodejs",
   "ml": "machine learning",
-  "dl": "deep learning"
+  "dl": "deep learning",
+  "css3": "css",
+  "html5": "html"
 }

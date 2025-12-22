@@ -6,18 +6,25 @@ from src.matching.similarity_calculator import SimilarityCalculator
 from src.matching.gap_identifier import SkillGapIdentifier
 from src.explainability.explanation_generator import ExplanationGenerator
 from src.explainability.confidence_score import ConfidenceScorer
-
+from pathlib import Path
 
 # 1. Process resume
-resume_tokens = process_resume("data/resumes/sample_resume.txt")
+resume_tokens = process_resume("data/resumes/NilimaMishra_Resume_1P.pdf")
 resume_skills = set(ResumeSkillExtractor().extract(resume_tokens))
 
 # 2. Process JD
-jd_text = open("data/job_descriptions/data_analyst.txt").read()
+jd_path = Path("data") / "job_desc" / "mern_stack_developer.txt"
+jd_text = jd_path.read_text(encoding="utf-8")
+
 jd_result = JDSkillExtractor().extract_skills(jd_text)
 
 jd_core = set(jd_result["core_skills"])
 jd_optional = set(jd_result["optional_skills"])
+
+print("JD RESULT TYPE:", type(jd_result))
+print("JD RESULT VALUE:", jd_result)
+
+
 
 # 3. Vectorization
 resume_text = " ".join(resume_skills)
@@ -38,10 +45,26 @@ gaps = SkillGapIdentifier.identify_gaps(
 )
 
 # 6. Explainability
-explanation = ExplanationGenerator.generate(match_percentage, gaps)
-confidence = ConfidenceScorer.calculate(
-    match_percentage, len(gaps["missing_core_skills"])
+matched_skills = sorted(resume_skills & (jd_core | jd_optional))
+missing_skills = sorted((jd_core | jd_optional) - resume_skills)
+core_missing_skills = sorted(jd_core - resume_skills)
+
+explainer = ExplanationGenerator()
+explanation = explainer.generate_explanation(
+    matched_skills=matched_skills,
+    missing_skills=missing_skills,
+    core_missing_skills=core_missing_skills,
+    similarity_score=score
 )
+
+confidence_scorer = ConfidenceScorer()
+confidence = confidence_scorer.compute_confidence(
+    similarity_score=score,
+    matched_skills=matched_skills,
+    total_job_skills=len(jd_core | jd_optional)
+)
+
+
 
 print("\nMATCH %:", match_percentage)
 print("GAPS:", gaps)

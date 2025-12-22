@@ -8,7 +8,7 @@ Good communication skills required.
 """
 
 processor = JobDescriptionProcessor(
-    "data/job_descriptions/mern_stack_developer.txt"
+    "data/job_descriptions/ai_ml_developer.txt"
 )
 cleaned = processor.process()
 

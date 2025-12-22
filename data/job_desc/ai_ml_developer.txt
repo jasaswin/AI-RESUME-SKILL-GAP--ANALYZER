@@ -1,0 +1,21 @@
+Required skills:
+python
+machine learning
+data analysis
+numpy
+pandas
+scikit-learn
+nlp
+model evaluation
+
+Must have experience with:
+sql
+
+Good to have:
+deep learning
+aws
+docker
+fastapi
+flask
+power bi
+tableau
