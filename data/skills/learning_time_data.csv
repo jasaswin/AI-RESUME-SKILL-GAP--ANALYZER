@@ -1,0 +1,9 @@
+skill,category,difficulty,popularity,is_core,days
+python,language,1,9,1,30
+sql,language,1,8,1,20
+docker,tool,2,8,1,14
+aws,tool,3,9,1,28
+kubernetes,tool,3,7,0,30
+javascript,language,1,9,1,25
+react,framework,2,8,1,20
+machine learning,concept,3,8,0,45
