@@ -7,7 +7,9 @@ Required skills: Python, SQL, Power BI.
 Good communication skills required.
 """
 
-processor = JobDescriptionProcessor(jd_text)
+processor = JobDescriptionProcessor(
+    "data/job_descriptions/mern_stack_developer.txt"
+)
 cleaned = processor.process()
 
 print(cleaned)

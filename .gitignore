@@ -11,3 +11,7 @@ venv/
 # IDE
 .vscode/
 .idea/
+
+
+data/resumes/*.pdf
+data/job_descriptions/*.txt

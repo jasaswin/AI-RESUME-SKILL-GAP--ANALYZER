@@ -8,7 +8,7 @@ Good to have AWS knowledge.
 """
 
 extractor = JDSkillExtractor()
-result = extractor.extract_skills(jd_text)
+result = extractor.extract_skills("data/job_descriptions/mern_stack_developer.txt")
 
 print("CORE SKILLS:", result["core_skills"])
 print("OPTIONAL SKILLS:", result["optional_skills"])

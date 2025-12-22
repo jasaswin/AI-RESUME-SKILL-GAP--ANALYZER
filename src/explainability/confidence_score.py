@@ -1,6 +1,4 @@
 
-
-
 # src/explainability/confidence_score.py
 
 import numpy as np
@@ -35,3 +33,4 @@ class ConfidenceScorer:
         confidence = (0.6 * similarity_score) + (0.4 * coverage_ratio)
 
         return round(confidence * 100, 2)
+
