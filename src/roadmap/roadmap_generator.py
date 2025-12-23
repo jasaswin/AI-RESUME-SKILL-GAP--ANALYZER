@@ -106,6 +106,8 @@ from sklearn.linear_model import LinearRegression
 
 from src.roadmap.skill_difficulty import SkillDifficulty
 from src.roadmap.resource_mapper import ResourceMapper
+from src.roadmap.skill_dependency import SkillDependencyResolver
+
 
 
 class RoadmapGenerator:
@@ -116,6 +118,7 @@ class RoadmapGenerator:
     def __init__(self):
         self.difficulty_engine = SkillDifficulty()
         self.resource_mapper = ResourceMapper()
+        self.dependency_resolver = SkillDependencyResolver()
         self.model = self._train_learning_time_model()
 
     def _train_learning_time_model(self):
@@ -123,12 +126,7 @@ class RoadmapGenerator:
         Train regression model on synthetic learning-time data
         """
 
-        # Features: [difficulty_level]
-        X = np.array([
-            [1], [1], [2], [2], [3], [3]
-        ])
-
-        # Target: learning time in weeks
+        X = np.array([[1], [1], [2], [2], [3], [3]])
         y = np.array([2, 3, 5, 6, 9, 10])
 
         model = LinearRegression()
@@ -137,30 +135,48 @@ class RoadmapGenerator:
 
     def estimate_learning_time(self, skill: str) -> float:
         """
-        Predict learning time (weeks) using ML regression
+        Predict learning time (weeks)
         """
         difficulty_level = self.difficulty_engine.get_difficulty_level(skill)
         predicted_time = self.model.predict([[difficulty_level]])[0]
         return float(round(predicted_time, 1))
 
-    def generate_roadmap(self, missing_skills: list) -> list:
+    def generate_roadmap(self, skills: list) -> list:
         """
-        Generate ordered roadmap with ML-based time estimates
+        Generate ordered roadmap
         """
-
         roadmap = []
 
-        for skill in missing_skills:
-            weeks = self.estimate_learning_time(skill)
-            resources = self.resource_mapper.get_resources(skill)
-
+        for skill in skills:
             roadmap.append({
                 "skill": skill,
-                "estimated_weeks": weeks,
-                "resources": resources
+                "estimated_weeks": self.estimate_learning_time(skill),
+                "resources": self.resource_mapper.get_resources(skill)
             })
 
-        # Sort by estimated learning time (ascending)
         roadmap.sort(key=lambda x: x["estimated_weeks"])
-
         return roadmap
+    
+
+    def generate_phase_roadmap(self, priority_map: dict) -> dict:
+       roadmap = {}
+
+       if priority_map["high_priority"]:
+        ordered = self.dependency_resolver.resolve(
+            priority_map["high_priority"]
+        )
+        roadmap["Phase 1 – Job Readiness"] = self.generate_roadmap(ordered)
+
+       if priority_map["medium_priority"]:
+        ordered = self.dependency_resolver.resolve(
+            priority_map["medium_priority"]
+        )
+        roadmap["Phase 2 – Profile Strengthening"] = self.generate_roadmap(ordered)
+
+       if priority_map["low_priority"]:
+        ordered = self.dependency_resolver.resolve(
+            priority_map["low_priority"]
+        )
+        roadmap["Phase 3 – Long-term Growth"] = self.generate_roadmap(ordered)
+
+       return roadmap

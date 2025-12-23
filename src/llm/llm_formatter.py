@@ -1,0 +1,64 @@
+import os
+from src.config.settings import USE_LLM, LLM_PROVIDER
+from dotenv import load_dotenv
+load_dotenv() 
+
+
+
+# ---------- Base Interface ----------
+class BaseLLM:
+    def generate(self, text: str) -> str:
+        raise NotImplementedError
+
+
+# ---------- Fallback (No LLM) ----------
+class RuleBasedLLM(BaseLLM):
+    def generate(self, text: str) -> str:
+        return text
+
+
+# ---------- Groq LLM ----------
+class GroqLLM(BaseLLM):
+    def __init__(self):
+        from groq import Groq  # imported only if used
+
+        self.client = Groq(
+            api_key=os.getenv("GROQ_API_KEY")
+        )
+
+    def generate(self, text: str) -> str:
+        completion = self.client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Rewrite the response professionally and concisely."
+                },
+                {
+                    "role": "user",
+                    "content": text
+                }
+            ],
+            temperature=0.3,
+        )
+
+        return completion.choices[0].message.content.strip()
+
+
+# ---------- Formatter ----------
+class LLMFormatter:
+    """
+    Feature-flagged LLM phrasing layer
+    """
+
+    def __init__(self):
+        if not USE_LLM:
+            self.llm = RuleBasedLLM()
+            return
+
+        if LLM_PROVIDER == "groq":
+            self.llm = GroqLLM()
+        else:
+            # Safe fallback
+            self.llm = RuleBasedLLM()
