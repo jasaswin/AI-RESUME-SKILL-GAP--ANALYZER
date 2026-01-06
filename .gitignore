@@ -16,4 +16,4 @@ venv/
 
 
 data/resumes/*.pdf
-data/job_descriptions/*.txt
+data/job_desc/*.txt

@@ -16,15 +16,24 @@ from src.intelligence.skill_priority import SkillPriorityAssigner
 from src.intelligence.resume_quality_scorer import ResumeQualityScorer
 from src.intelligence.resume_suggestions import ResumeSuggestionEngine
 from src.intelligence.resume_signals import ResumeSignalAnalyzer
+from src.intelligence.role_compatibility import RoleCompatibilityAnalyzer
 
-# 1. Process resume
-resume_tokens = process_resume("data/resumes/NilimaMishra_CSE_GITA.pdf")
-resume_skills = set(ResumeSkillExtractor().extract(resume_tokens))
+
 
 #  Extract raw resume text
 resume_raw_text = extract_resume_text(
-    "data/resumes/NilimaMishra_CSE_GITA.pdf"
+    "data/resumes/entry-level-business-analyst2 - Template 17.pdf"
 )
+# 1. Process resume
+
+resume_tokens = process_resume("data/resumes/entry-level-business-analyst2 - Template 17.pdf")
+
+extractor = ResumeSkillExtractor()
+extracted_skills = extractor.extract(resume_tokens, resume_raw_text)
+
+resume_skills = set(extracted_skills.keys())
+
+
 
 #  CREATE INSTANCE (THIS WAS MISSING)
 depth_estimator = SkillDepthEstimator()
@@ -35,9 +44,27 @@ skill_depths = depth_estimator.estimate(
     resume_skills=resume_skills
 )
 
+# --- Promote inferred skills with confidence ---
+from src.intelligence.skill_confidence_promoter import SkillConfidencePromoter
+
+inferred_skills = {
+    s for s, meta in ResumeSkillExtractor()
+    .extract(resume_tokens, resume_raw_text).items()
+    if meta["source"] == "inferred"
+}
+
+promoted_skills = SkillConfidencePromoter.promote(
+    resume_skills,
+    inferred_skills,
+    skill_depths
+)
+
+resume_skills = resume_skills | promoted_skills
+
+
 
 # 2. Process JD
-jd_path = Path("data") / "job_desc" / "mern_stack_developer.txt"
+jd_path = Path("data") / "job_desc" / "business_analyst.txt"
 jd_text = jd_path.read_text(encoding="utf-8")
 
 jd_result = JDSkillExtractor().extract_skills(jd_text)
@@ -57,18 +84,34 @@ jd_text_combined = " ".join(jd_core | jd_optional)
 vectorizer = SkillVectorizer()
 vectors = vectorizer.fit_transform([resume_text, jd_text_combined])
 
+compatibility = RoleCompatibilityAnalyzer.analyze(
+    resume_skills=resume_skills,
+    skill_depths=skill_depths,
+    target_role="business_analyst"
+)
+
+
 # 4. Similarity
 
-tfidf_score = SimilarityCalculator.cosine_similarity_score(
-    vectors[0], vectors[1]
+tfidf_score = SimilarityCalculator.weighted_similarity_score(
+    resume_vector=vectors[0:1],  # ← slice keeps 2D
+    jd_vector=vectors[1:2],
+    resume_skills=resume_skills,
+    jd_core_skills=jd_core,
+    jd_optional_skills=jd_optional,
+    skill_depths=skill_depths
 )
 
-final_match_percentage = ScoreCalculator.final_score(
-    tfidf_score=tfidf_score,
+
+final_score = ScoreCalculator.final_score(
+    similarity_score=tfidf_score,
     resume_skills=resume_skills,
     core_skills=jd_core,
-    optional_skills=jd_optional
+    optional_skills=jd_optional,
+    skill_depths=skill_depths,
+    role="ai_ml_developer"
 )
+
 
 # 5. Gap detection
 gaps = SkillGapIdentifier.identify_gaps(
@@ -119,7 +162,7 @@ confidence = confidence_scorer.compute_confidence(
 
 readiness_analyzer = CareerReadinessAnalyzer()
 career_readiness = readiness_analyzer.analyze(
-    final_match_percentage=final_match_percentage,
+    final_score=final_score,
     confidence=confidence,
     missing_core_skills=gaps["missing_core_skills"],
     missing_optional_skills=gaps["missing_optional_skills"]
@@ -146,8 +189,13 @@ for s in suggestions:
     print("-", s)
 print("\nSKILL DEPTHS:")
 print(skill_depths)
+
+print("\nROLE COMPATIBILITY:")
+for k, v in compatibility.items():
+    print(f"{k}: {v}")
+
 print("\nTF-IDF SCORE:", round(tfidf_score * 100, 2))
-print("FINAL MATCH %:", final_match_percentage)
+print("FINAL MATCH %:", final_score)
 print("GAPS:", gaps)
 print("CONFIDENCE:", confidence)
 print("EXPLANATION:", explanation)
@@ -161,3 +209,6 @@ for phase, steps in phase_roadmap.items():
         print(step)
 print("\nCAREER READINESS:")
 print(career_readiness)
+
+
+

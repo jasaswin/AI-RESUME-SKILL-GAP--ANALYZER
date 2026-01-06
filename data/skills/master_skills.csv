@@ -33,5 +33,22 @@ algorithms,concept
 problem solving,concept
 dsa,concept
 
+business analysis,business
+requirements gathering,business
+stakeholder management,business
+process optimization,business
 
+reporting,analytics
+dashboarding,analytics
+data visualization,analytics
+kpi analysis,analytics
+
+user acceptance testing,quality
+test case design,quality
+
+business analysis,concept
+data visualization,concept
+reporting,concept
+stakeholder management,concept
+process optimization,concept
 

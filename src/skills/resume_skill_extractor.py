@@ -1,29 +1,107 @@
-import re
+from collections import defaultdict
 from src.skills.skill_database import SkillDatabase
 
 
 class ResumeSkillExtractor:
+    """
+    Extracts explicit and inferred skills from resume text
+    using token match + phrase detection + functional inference
+    """
+
     def __init__(self):
         self.skill_db = SkillDatabase()
 
-    def extract(self, tokens: list[str]) -> list[str]:
-        # Step 1: normalize tokens using aliases
-        normalized_tokens = []
+        # Functional → technical inference
+        self.functional_inference = {
+            "data analysis": {
+                "analyze", "analysis", "insights", "reporting",
+                "dashboard", "metrics", "kpi", "data-driven"
+            },
+            "machine learning": {
+                "model", "prediction", "classification",
+                "regression", "training", "feature"
+            },
+            "nlp": {
+                "text", "language", "token", "sentiment",
+                "nlp"
+            },
+            "problem solving": {
+                "optimize", "debug", "resolve", "improve",
+                "solution", "troubleshoot"
+            },
+            "data structures": {
+                "array", "linked list", "tree", "graph",
+                "stack", "queue"
+            }
+        }
 
+        # Business-domain inference
+        self.business_inference = {
+            "business analysis": {
+                "business analysis", "business analyst",
+                "requirements gathering", "gap analysis"
+            },
+            "stakeholder management": {
+                "stakeholder", "client", "interview",
+                "workshop", "collaboration"
+            },
+            "process optimization": {
+                "process optimization", "process improvement",
+                "workflow", "efficiency", "productivity"
+            },
+            "reporting": {
+                "report", "dashboard", "visualization",
+                "metrics", "kpi"
+            },
+            "user acceptance testing": {
+                "uat", "user acceptance testing",
+                "validation", "test cases"
+            }
+        }
+
+    def extract(self, tokens: list[str], resume_text: str = "") -> dict:
+        """
+        Returns:
+        {
+            skill: {
+                "source": "explicit" | "inferred"
+            }
+        }
+        """
+
+        skill_hits = defaultdict(lambda: {"source": "explicit"})
+        text_lower = resume_text.lower()
+
+        # ---------- 1️⃣ Explicit phrase detection (CRITICAL FIX) ----------
+        for skill in self.skill_db.skills:
+            if " " in skill and skill in text_lower:
+                skill_hits[skill]["source"] = "explicit"
+
+        # ---------- 2️⃣ Token-based explicit detection ----------
         for token in tokens:
-            token = token.lower()
-            token = re.sub(r"[^a-z0-9+#]", "", token)  # clean punctuation
-            token = self.skill_db.normalize_skill(token)  # APPLY ALIAS HERE
-            normalized_tokens.append(token)
+            normalized = self.skill_db.normalize_skill(token)
 
-        text = " ".join(normalized_tokens)
+            if self.skill_db.is_valid_skill(normalized):
+                skill_hits[normalized]["source"] = "explicit"
 
-        found_skills = set()
+        present_skills = set(skill_hits.keys())
 
-        # Step 2: match ONLY against master skills
-        for skill in self.skill_db.skills.keys():
-            pattern = rf"\b{re.escape(skill)}\b"
-            if re.search(pattern, text):
-                found_skills.add(skill)
+        # ---------- 3️⃣ Functional inference ----------
+        for skill, indicators in self.functional_inference.items():
+            if skill in present_skills:
+                continue
 
-        return sorted(found_skills)
+            if any(indicator in text_lower for indicator in indicators):
+                if self.skill_db.is_valid_skill(skill):
+                    skill_hits[skill] = {"source": "inferred"}
+
+        # ---------- 4️⃣ Business-domain inference ----------
+        for skill, phrases in self.business_inference.items():
+            if skill in present_skills:
+                continue
+
+            if any(phrase in text_lower for phrase in phrases):
+                if self.skill_db.is_valid_skill(skill):
+                    skill_hits[skill] = {"source": "inferred"}
+
+        return dict(skill_hits)

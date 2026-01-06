@@ -16,11 +16,39 @@ class SkillDatabase:
         self.skill_csv_path = base_path / "data" / "skills" / "master_skills.csv"
         self.alias_json_path = base_path / "data" / "skills" / "skill_alias.json"
 
+        self.skill_clusters = self._build_skill_clusters()
+
+
         self.skills = self._load_skills()
         self.aliases = self._load_aliases()
 
         
         print("ALIASES LOADED:", self.aliases)
+
+    def _build_skill_clusters(self) -> dict:
+          """
+           Defines logical skill groupings used for inference
+          """
+          return {
+            "dsa_cluster": {
+                "algorithms",
+                "data structures",
+                "problem solving"
+            },
+            "backend_cluster": {
+                "python",
+                "java",
+                "nodejs",
+                "flask"
+            },
+            "ml_cluster": {
+                "machine learning",
+                "data analysis",
+                "deep learning",
+                "nlp"
+            }
+        }
+
 
     def _load_skills(self) -> dict:
         """
@@ -75,3 +103,22 @@ class SkillDatabase:
         """
         skill = self.normalize_skill(skill)
         return self.skills.get(skill)
+    
+
+    def infer_related_skills(self, detected_skills: set[str]) -> set[str]:
+        """
+        Infer missing skills based on strong cluster presence.
+        Uses conservative rule: infer only if >=2 cluster skills exist.
+        """
+        inferred = set()
+
+        normalized_skills = {self.normalize_skill(s) for s in detected_skills}
+
+        for cluster_name, cluster_skills in self.skill_clusters.items():
+            overlap = normalized_skills & cluster_skills
+
+            if len(overlap) >= 2:
+                inferred |= cluster_skills - normalized_skills
+
+        return inferred
+

@@ -1,39 +1,44 @@
 class CareerReadinessAnalyzer:
     """
-    Determines job readiness level using hybrid AI signals
+    Determines overall job readiness and hiring signal
+    using role-aware final score and confidence
     """
-
-    def __init__(self):
-        pass
 
     def analyze(
         self,
-        final_match_percentage: float,
+        final_score: float,
         confidence: float,
         missing_core_skills: list,
         missing_optional_skills: list
     ) -> dict:
-        """
-        Returns readiness score, readiness level, and hiring signal
-        """
 
-        readiness_score = round(
-            (0.6 * final_match_percentage) + (0.4 * confidence), 2
-        )
-
-        # Readiness level logic (explainable & ATS-style)
-        if readiness_score >= 70 and len(missing_core_skills) == 0:
+        # -------- Base readiness from score --------
+        if final_score >= 75:
             readiness_level = "Job Ready"
             hiring_signal = "Strong hiring signal"
-        elif readiness_score >= 50:
+        elif final_score >= 55:
             readiness_level = "Trainable"
             hiring_signal = "Needs targeted upskilling"
         else:
             readiness_level = "Not Ready"
             hiring_signal = "Significant skill gaps detected"
 
+        # -------- Core skill override (critical) --------
+        if missing_core_skills:
+            if final_score >= 75:
+                readiness_level = "Trainable"
+                hiring_signal = "Strong profile but missing core skills"
+            elif final_score >= 55:
+                readiness_level = "Not Ready"
+                hiring_signal = "Core skills missing"
+
+        # -------- Confidence-based adjustment --------
+        if confidence < 40 and readiness_level == "Job Ready":
+            readiness_level = "Trainable"
+            hiring_signal = "Low confidence in skill alignment"
+
         return {
-            "readiness_score": readiness_score,
+            "readiness_score": round(final_score, 2),
             "readiness_level": readiness_level,
             "hiring_signal": hiring_signal
         }

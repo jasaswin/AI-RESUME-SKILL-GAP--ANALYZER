@@ -12,5 +12,12 @@
   "algorithms": "algorithms",
   "problem-solving": "problem solving",
   "problem solving": "problem solving",
-  "dp": "dynamic programming"
+  "dp": "dynamic programming",
+  "github": "git",
+  "powerbi": "power bi",
+  "power-bi": "power bi",
+  "bi": "power bi",
+  "data-visualization": "data visualization",
+  "visualization": "data visualization",
+  "analysis": "data analysis"
 }
