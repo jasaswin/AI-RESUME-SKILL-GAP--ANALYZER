@@ -23,7 +23,7 @@ class SkillDatabase:
         self.aliases = self._load_aliases()
 
         
-        print("ALIASES LOADED:", self.aliases)
+        # print("ALIASES LOADED:", self.aliases)
 
     def _build_skill_clusters(self) -> dict:
           """
