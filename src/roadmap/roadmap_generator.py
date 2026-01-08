@@ -1,182 +1,91 @@
-
-
-
-
-
 # src/roadmap/roadmap_generator.py
 
-# import numpy as np
-# from sklearn.linear_model import LinearRegression
-
-# from src.roadmap.skill_difficulty import SkillDifficultyMapper
-# from src.roadmap.resource_mapper import ResourceMapper
-
-
-# class RoadmapGenerator:
-#     """
-#     Generates ML-based learning roadmap with time estimation
-#     """
-
-#     def __init__(self):
-#         self.difficulty_mapper = SkillDifficultyMapper()
-#         self.resource_mapper = ResourceMapper()
-#         self.model = self._train_time_model()
-
-#     def _train_time_model(self):
-#         """
-#         Train regression model:
-#         Features:
-#         - difficulty
-#         - category_weight (proxy for complexity)
-#         Target:
-#         - learning time (weeks)
-#         """
-
-#         # Training data (synthetic but realistic)
-#         # [difficulty, category_weight]
-#         X = np.array([
-#             [1, 1],   # python
-#             [1, 1],   # sql
-#             [2, 2],   # docker
-#             [3, 3],   # aws
-#             [3, 3],   # kubernetes
-#             [3, 4],   # ml
-#             [4, 4]    # dl
-#         ])
-
-#         # Target learning time in weeks
-#         y = np.array([2, 2, 4, 6, 6, 8, 12])
-
-#         model = LinearRegression()
-#         model.fit(X, y)
-#         return model
-
-#     def _category_weight(self, skill: str) -> int:
-#         """
-#         Approximate category complexity
-#         """
-#         infra = {"docker", "aws", "kubernetes"}
-#         ai = {"machine learning", "deep learning"}
-
-#         if skill in infra:
-#             return 3
-#         if skill in ai:
-#             return 4
-#         return 1
-
-#     def estimate_learning_time(self, skill: str) -> float:
-#         """
-#         Predict learning time using ML regression
-#         """
-#         difficulty = self.difficulty_mapper.get_difficulty(skill)
-#         category_weight = self._category_weight(skill)
-
-#         features = np.array([[difficulty, category_weight]])
-#         predicted_weeks = self.model.predict(features)[0]
-
-#         return round(predicted_weeks, 1)
-
-#     def generate_roadmap(self, missing_skills: list) -> list:
-#         """
-#         Create ordered roadmap with time & resources
-#         """
-
-#         roadmap = []
-
-#         for skill in missing_skills:
-#             time_required = self.estimate_learning_time(skill)
-#             resources = self.resource_mapper.get_resources(skill)
-
-#             roadmap.append({
-#                 "skill": skill,
-#                 "estimated_weeks": time_required,
-#                 "resources": resources
-#             })
-
-#         # Sort by learning time (easy → hard)
-#         roadmap.sort(key=lambda x: x["estimated_weeks"])
-#         return roadmap
-
-
-
-# src/roadmap/roadmap_generator.py
-
-import numpy as np
-from sklearn.linear_model import LinearRegression
-
-from src.roadmap.skill_difficulty import SkillDifficulty
+from typing import Dict, List
 from src.roadmap.resource_mapper import ResourceMapper
-from src.roadmap.skill_dependency import SkillDependencyResolver
-
+from src.roadmap.skill_difficulty import SkillDifficultyMapper
+from src.intelligence.stability_engine import StabilityEngine
 
 
 class RoadmapGenerator:
     """
-    Generates ML-based personalized learning roadmap
+    Phase-aware, deduplicated roadmap generator.
+
+    Guarantees:
+    - A skill appears in ONLY ONE phase (earliest applicable)
+    - Phase meaning is preserved
+    - Roadmap is monotonic and user-trust-safe
     """
 
     def __init__(self):
-        self.difficulty_engine = SkillDifficulty()
         self.resource_mapper = ResourceMapper()
-        self.dependency_resolver = SkillDependencyResolver()
-        self.model = self._train_learning_time_model()
+        self.difficulty_mapper = SkillDifficultyMapper()
 
-    def _train_learning_time_model(self):
-        """
-        Train regression model on synthetic learning-time data
-        """
+    def generate_phase_roadmap(
+        self,
+        priority_map: Dict[str, List[str]]
+    ) -> Dict[str, List[dict]]:
 
-        X = np.array([[1], [1], [2], [2], [3], [3]])
-        y = np.array([2, 3, 5, 6, 9, 10])
+        roadmap = {
+            "Phase 1 – Job Readiness": [],
+            "Phase 2 – Applied Skills & Projects": [],
+            "Phase 3 – Long-term Growth": []
+        }
 
-        model = LinearRegression()
-        model.fit(X, y)
-        return model
+        # 🔒 GLOBAL DEDUPLICATION LOCK
+        scheduled_skills = set()
 
-    def estimate_learning_time(self, skill: str) -> float:
-        """
-        Predict learning time (weeks)
-        """
-        difficulty_level = self.difficulty_engine.get_difficulty_level(skill)
-        predicted_time = self.model.predict([[difficulty_level]])[0]
-        return float(round(predicted_time, 1))
+        # -------------------- PHASE 1: CORE CRITICAL --------------------
+        for skill in priority_map.get("high_priority", []):
+            if skill in scheduled_skills:
+                continue
 
-    def generate_roadmap(self, skills: list) -> list:
-        """
-        Generate ordered roadmap
-        """
-        roadmap = []
+            roadmap["Phase 1 – Job Readiness"].append(
+                self._build_step(skill)
+            )
+            scheduled_skills.add(skill)
 
-        for skill in skills:
-            roadmap.append({
-                "skill": skill,
-                "estimated_weeks": self.estimate_learning_time(skill),
-                "resources": self.resource_mapper.get_resources(skill)
-            })
+        # -------------------- PHASE 2: CORE TRAINABLE --------------------
+        for skill in priority_map.get("medium_priority", []):
+            if skill in scheduled_skills:
+                continue
 
-        roadmap.sort(key=lambda x: x["estimated_weeks"])
+            roadmap["Phase 2 – Applied Skills & Projects"].append(
+                self._build_step(skill)
+            )
+            scheduled_skills.add(skill)
+
+        # -------------------- PHASE 3: OPTIONAL / GROWTH --------------------
+        for skill in priority_map.get("low_priority", []):
+            if skill in scheduled_skills:
+                continue
+
+            roadmap["Phase 3 – Long-term Growth"].append(
+                self._build_step(skill)
+            )
+            scheduled_skills.add(skill)
+
         return roadmap
-    
 
-    def generate_phase_roadmap(self, priority_map: dict) -> dict:
-       roadmap = {}
+    # ==================================================
+    # INTERNAL HELPERS
+    # ==================================================
+    def _build_step(self, skill: str) -> dict:
+        """
+        Builds a single roadmap step with
+        realistic time + action-based resources
+        """
+        difficulty = self.difficulty_mapper.map(skill)
 
-       if priority_map["high_priority"]:
-        ordered = self.dependency_resolver.resolve(
-            priority_map["high_priority"]
-        )
-        roadmap["Phase 1 – Job Readiness"] = self.generate_roadmap(ordered)
+        estimated_weeks = {
+            "easy": 2.0,
+            "medium": 3.0,
+            "hard": 4.0
+        }.get(difficulty, 3.0)
 
-       if priority_map["medium_priority"]:
-        ordered = self.dependency_resolver.resolve(
-            priority_map["medium_priority"]
-        )
-        roadmap["Phase 2 – Profile Strengthening"] = self.generate_roadmap(ordered)
+        resources = self.resource_mapper.get_resources(skill)
 
-       if priority_map["low_priority"]:
-        ordered = self.dependency_resolver.resolve(
-            priority_map["low_priority"]
-        )
-        roadmap["Phase 3 – Long-term Growth"] = self.generate_roadmap(ordered)
-
-       return roadmap
+        return {
+            "skill": skill,
+            "estimated_weeks": round(estimated_weeks, 1),
+            "resources": resources
+        }

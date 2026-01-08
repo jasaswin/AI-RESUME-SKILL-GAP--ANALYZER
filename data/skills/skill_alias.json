@@ -19,5 +19,15 @@
   "bi": "power bi",
   "data-visualization": "data visualization",
   "visualization": "data visualization",
-  "analysis": "data analysis"
+  "analysis": "data analysis",
+    "ux": "ux design",
+  "ui": "user interface design",
+  "ux/ui": "ux design",
+  "wireframe": "wireframing",
+  "prototype": "prototyping",
+  "usability testing": "user testing",
+  "user testing": "user testing",
+  "figma design": "figma",
+  "adobexd": "adobe xd",
+  "research": "user research"
 }

@@ -58,6 +58,17 @@ class ResumeSkillExtractor:
                 "validation", "test cases"
             }
         }
+        self.tech_dependency_inference = {
+    "react": {"javascript", "html", "css"},
+    "reactjs": {"javascript", "html", "css"},
+    "nodejs": {"javascript"},
+    "express": {"nodejs", "javascript"},
+    "nextjs": {"react", "javascript"},
+    "aws lambda": {"aws"},
+    "github": {"git"},
+    "version control": {"git"},
+}
+
 
     def extract(self, tokens: list[str], resume_text: str = "") -> dict:
         """
@@ -104,4 +115,16 @@ class ResumeSkillExtractor:
                 if self.skill_db.is_valid_skill(skill):
                     skill_hits[skill] = {"source": "inferred"}
 
-        return dict(skill_hits)
+        # ---------- 5️⃣ Technology dependency inference ----------
+        expanded_skills = dict(skill_hits)
+
+        for skill in list(skill_hits.keys()):
+            inferred_dependencies = self.tech_dependency_inference.get(skill, set())
+
+        for dep in inferred_dependencies:
+           if dep not in expanded_skills and self.skill_db.is_valid_skill(dep):
+            expanded_skills[dep] = {"source": "inferred"}
+
+        return expanded_skills
+
+        # return dict(skill_hits)

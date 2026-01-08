@@ -1,39 +1,40 @@
 class ResumeSuggestionEngine:
     """
-    Generates actionable resume improvement suggestions
+    Generates deterministic, prioritized resume improvement suggestions
     """
 
     def generate(
         self,
         resume_text: str,
-        resume_skills: set,
-        missing_skills: list
+        missing_skills: list,
+        resume_signals: dict
     ) -> list:
 
         suggestions = []
+        text = resume_text.lower()
 
-        # 1️⃣ Missing critical skills
+        # 1️⃣ Critical skill gaps
         if missing_skills:
             suggestions.append(
-                f"Add projects demonstrating {', '.join(missing_skills)} usage."
+                f"Add 1–2 projects demonstrating hands-on usage of {', '.join(missing_skills[:3])}."
             )
 
-        # 2️⃣ Project mentions
-        if "project" not in resume_text.lower():
+        # 2️⃣ Missing project focus
+        if not resume_signals.get("project_focus"):
             suggestions.append(
-                "Include a dedicated Projects section with outcomes and tools used."
+                "Add a Projects section highlighting tools used, problems solved, and outcomes."
             )
 
-        # 3️⃣ Metrics & impact
-        if "%" not in resume_text and "improved" not in resume_text.lower():
+        # 3️⃣ Missing metrics
+        if not resume_signals.get("metrics_signal"):
             suggestions.append(
-                "Add measurable impact (e.g., performance improvement, accuracy, users)."
+                "Include measurable impact (e.g., performance %, users impacted, latency reduced)."
             )
 
-        # 4️⃣ Deployment signal
-        if not any(x in resume_text.lower() for x in ["docker", "aws", "deploy"]):
+        # 4️⃣ Missing deployment exposure
+        if not resume_signals.get("deployment_experience"):
             suggestions.append(
-                "Mention deployment experience (Docker, cloud, or hosting)."
+                "Mention deployment or hosting experience (Docker, cloud, or CI/CD pipelines)."
             )
 
         return suggestions

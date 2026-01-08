@@ -1,54 +1,42 @@
-skill,category
-python,language
-java,language
-javascript,language
-sql,language
-html,language
-css,language
-c,language
-c++,language
+skill,category,domain,base_weight
 
-django,framework
-flask,framework
-spring,framework
-react,framework
-nodejs,framework
+python,language,engineering,1.0
+java,language,engineering,1.0
+javascript,language,engineering,1.0
+sql,language,engineering,1.0
+html,language,engineering,0.9
+css,language,engineering,0.9
 
-aws,tool
-docker,tool
-kubernetes,tool
-git,tool
-github,tool
-power bi,tool
-tableau,tool
-excel,tool
+django,framework,engineering,1.0
+flask,framework,engineering,1.0
+react,framework,engineering,1.0
+nodejs,framework,engineering,1.0
 
-machine learning,concept
-data analysis,concept
-deep learning,concept
-nlp,concept
+aws,tool,engineering,0.8
+docker,tool,engineering,0.8
+git,tool,engineering,0.7
 
-data structures,concept
-algorithms,concept
-problem solving,concept
-dsa,concept
+machine learning,concept,engineering,1.3
+nlp,concept,engineering,1.3
 
-business analysis,business
-requirements gathering,business
-stakeholder management,business
-process optimization,business
+data analysis,concept,analytics,1.2
+data visualization,concept,analytics,1.1
+excel,tool,analytics,1.0
+power bi,tool,analytics,1.0
+tableau,tool,analytics,1.0
+reporting,concept,analytics,1.0
 
-reporting,analytics
-dashboarding,analytics
-data visualization,analytics
-kpi analysis,analytics
+ux design,design,design,1.3
+wireframing,design,design,1.1
+prototyping,design,design,1.1
+usability,design,design,1.2
+user research,design,design,1.2
+accessibility,design,design,1.1
 
-user acceptance testing,quality
-test case design,quality
+figma,tool,design,1.0
+adobe xd,tool,design,1.0
 
-business analysis,concept
-data visualization,concept
-reporting,concept
-stakeholder management,concept
-process optimization,concept
+stakeholder management,business,business,1.0
+requirements gathering,business,business,1.0
+process optimization,business,business,1.0
 

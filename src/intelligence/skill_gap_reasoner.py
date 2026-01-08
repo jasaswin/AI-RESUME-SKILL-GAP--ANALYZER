@@ -1,9 +1,7 @@
-from src.matching.role_profiles import ROLE_PROFILES
-
-
 class SkillGapReasoner:
     """
-    Explains WHY a skill gap exists and HOW to fix it
+    Determines severity and intent of missing skills.
+    This is the semantic bridge between gaps and actions.
     """
 
     @staticmethod
@@ -13,63 +11,31 @@ class SkillGapReasoner:
         skill_depths: dict,
         missing_core_skills: list,
         missing_optional_skills: list,
-        role: str
-    ) -> list:
-        profile = ROLE_PROFILES.get(role, {})
-        role_priority = set(profile.get("core_skills", []))
+        role: str | None = None
+    ) -> list[dict]:
 
-        explanations = []
+        reasoning = []
 
-        all_missing = set(missing_core_skills) | set(missing_optional_skills)
-
-        for skill in all_missing:
-            explanation = {
+        # ---------------- Core skill gaps (HIGH severity) ----------------
+        for skill in missing_core_skills:
+            reasoning.append({
                 "skill": skill,
-                "gap_type": None,
-                "severity": None,
-                "reason": None,
-                "recommended_fix": None
-            }
+                "severity": "High",
+                "reason": "Required core skill missing"
+            })
 
-            # ---------- Gap Type ----------
-            if skill in inferred_skills:
-                explanation["gap_type"] = "implicit_only"
-                explanation["reason"] = (
-                    "Skill inferred from context but not explicitly stated"
-                )
-            elif skill in resume_skills:
-                explanation["gap_type"] = "weak_evidence"
-                explanation["reason"] = (
-                    "Skill mentioned but lacks project or experience usage"
-                )
-            else:
-                explanation["gap_type"] = "missing"
-                explanation["reason"] = (
-                    "No evidence of this skill found in the resume"
-                )
+        # ---------------- Optional skill gaps (MEDIUM / LOW) ----------------
+        for skill in missing_optional_skills:
+            depth = skill_depths.get(skill, "none")
 
-            # ---------- Severity ----------
-            if skill in role_priority:
-                explanation["severity"] = "High"
-            elif explanation["gap_type"] == "weak_evidence":
-                explanation["severity"] = "Medium"
-            else:
-                explanation["severity"] = "Low"
+            severity = (
+                "Medium" if depth in {"none", "beginner"} else "Low"
+            )
 
-            # ---------- Fix Recommendation ----------
-            if explanation["gap_type"] == "missing":
-                explanation["recommended_fix"] = (
-                    f"Add at least one project or experience demonstrating {skill}"
-                )
-            elif explanation["gap_type"] == "implicit_only":
-                explanation["recommended_fix"] = (
-                    f"Explicitly mention {skill} in skills or project descriptions"
-                )
-            else:
-                explanation["recommended_fix"] = (
-                    f"Strengthen {skill} with measurable outcomes or tools used"
-                )
+            reasoning.append({
+                "skill": skill,
+                "severity": severity,
+                "reason": "Optional or growth skill"
+            })
 
-            explanations.append(explanation)
-
-        return explanations
+        return reasoning

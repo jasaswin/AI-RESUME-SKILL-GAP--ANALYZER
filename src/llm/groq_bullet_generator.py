@@ -1,29 +1,39 @@
-# src/llm/groq_bullet_generator.py
 from src.llm.groq_client import GroqClient
 
 class GroqBulletGenerator:
-    def __init__(self, enabled=True):
+    def __init__(self, enabled=True, debug=False):
         self.enabled = enabled
-        self.client = GroqClient() if enabled else None
+        self.client = GroqClient(debug=debug)   # ✅ FIX
 
-    def generate(self, skill, level, role, section):
+        # existing init code…
+
+    def generate(
+        self,
+        skill: str,
+        level: str,
+        role: str,
+        section: str | None = None   # 👈 MAKE OPTIONAL
+    ) -> str | None:
+        
+        if not self.client:
+            return None
+
         if not self.enabled:
-            return None  # fallback will handle
+            return None
+
+        section_hint = section or "Resume"
 
         prompt = f"""
-Generate ONE professional resume bullet.
+Generate a concise, realistic resume bullet for an {role.replace('_', ' ')} role.
 
 Skill: {skill}
-Experience level: {level}
-Target role: {role}
-Resume section: {section}
+Proficiency: {level}
+Context: {section_hint}
 
 Rules:
-- ATS friendly
-- No exaggeration
-- No learning/coursework wording
-- Concise, impact-focused
-Return only the bullet point.
+- Do NOT invent experience
+- Keep it resume-safe
+- 1 bullet only
 """
 
         return self.client.generate(prompt)

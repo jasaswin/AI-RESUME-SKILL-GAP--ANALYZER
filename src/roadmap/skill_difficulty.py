@@ -1,64 +1,34 @@
-
-
-
-
-
-# # src/roadmap/skill_difficulty.py
-
-# class SkillDifficultyMapper:
-#     """
-#     Maps skills to difficulty levels (used as ML feature)
-#     """
-
-#     def __init__(self):
-#         self.difficulty_map = {
-#             "python": 1,
-#             "sql": 1,
-#             "java": 2,
-#             "docker": 2,
-#             "aws": 3,
-#             "kubernetes": 3,
-#             "machine learning": 3,
-#             "deep learning": 4
-#         }
-
-#     def get_difficulty(self, skill: str) -> int:
-#         """
-#         Returns numeric difficulty (default = 2)
-#         """
-#         return self.difficulty_map.get(skill.lower(), 2)
-
-
-
-
 # src/roadmap/skill_difficulty.py
 
-class SkillDifficulty:
+class SkillDifficultyMapper:
     """
-    Encodes skill difficulty as numerical ML-friendly values
+    Maps skills to realistic difficulty levels.
+    This is intentionally conservative for entry-level roles.
     """
 
-    def __init__(self):
-        self.difficulty_map = {
-            "beginner": 1,
-            "intermediate": 2,
-            "advanced": 3
-        }
+    EASY = {
+        "html", "css", "sql", "excel", "power bi", "tableau"
+    }
 
-        # Default difficulty for known skills
-        self.skill_difficulty = {
-            "python": "beginner",
-            "sql": "beginner",
-            "docker": "intermediate",
-            "aws": "intermediate",
-            "kubernetes": "advanced",
-            "machine learning": "advanced"
-        }
+    MEDIUM = {
+        "python", "java", "javascript", "data analysis",
+        "nodejs", "flask", "django"
+    }
 
-    def get_difficulty_level(self, skill: str) -> int:
-        """
-        Returns numerical difficulty level
-        """
-        level = self.skill_difficulty.get(skill, "intermediate")
-        return self.difficulty_map[level]
+    HARD = {
+        "machine learning", "deep learning", "nlp",
+        "docker", "aws", "kubernetes"
+    }
 
+    def map(self, skill: str) -> str:
+        skill = skill.lower().strip()
+
+        if skill in self.EASY:
+            return "easy"
+        if skill in self.MEDIUM:
+            return "medium"
+        if skill in self.HARD:
+            return "hard"
+
+        # Safe fallback
+        return "medium"

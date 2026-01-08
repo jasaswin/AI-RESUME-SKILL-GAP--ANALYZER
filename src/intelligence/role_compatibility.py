@@ -1,69 +1,91 @@
+from typing import Set, Dict
 from src.matching.role_profiles import ROLE_PROFILES
 
 
 class RoleCompatibilityAnalyzer:
     """
-    Determines how well a resume aligns with roles,
-    independent of ATS scoring.
+    Production-grade role compatibility analyzer.
+
+    Guarantees:
+    - Explicit + inferred skills are considered
+    - Equivalent skills are normalized
+    - No role bias due to lexical mismatch
     """
 
     @staticmethod
-    def analyze(resume_skills: set, target_role: str, skill_depths: dict | None = None) -> dict:
-        profile = ROLE_PROFILES.get(target_role)
+    def analyze(
+        explicit_skills: Set[str],
+        inferred_skills: Set[str],
+        target_role: str,
+        equivalence_map: Dict[str, Set[str]] | None = None
+    ) -> dict:
 
+        profile = ROLE_PROFILES.get(target_role)
         if not profile:
-            raise ValueError(f"Unknown role: {target_role}")
+            return {
+                "role_fit": "Unknown",
+                "compatibility_score": 0.0,
+                "matched_core_skills": [],
+                "partially_matched_core_skills": [],
+                "missing_core_skills": [],
+                "transition_feasibility": "Low"
+            }
+
+        equivalence_map = equivalence_map or {}
 
         core_skills = set(profile["core_skills"])
         optional_skills = set(profile.get("optional_skills", []))
 
+        # -------------------- 1️⃣ Effective Skill Set --------------------
+        effective_skills = set(explicit_skills) | set(inferred_skills)
+
+        normalized_skills = set(effective_skills)
+        for skill in effective_skills:
+            normalized_skills.update(equivalence_map.get(skill, set()))
+
+        # -------------------- 2️⃣ Core Skill Matching --------------------
         matched_core = set()
         partial_core = set()
         missing_core = set()
 
-        # -------- Core skill matching --------
         for skill in core_skills:
-            if skill in resume_skills:
+            if skill in normalized_skills:
                 matched_core.add(skill)
             else:
-                skill_tokens = set(skill.split())
-                partial_found = False
-
-                for r_skill in resume_skills:
-                    if skill_tokens & set(r_skill.split()):
+                # partial = semantic overlap
+                for r_skill in normalized_skills:
+                    if skill in r_skill or r_skill in skill:
                         partial_core.add(skill)
-                        partial_found = True
                         break
-
-                if not partial_found:
+                else:
                     missing_core.add(skill)
 
-        # -------- Weighted core ratio --------
+        # -------------------- 3️⃣ Weighted Core Ratio --------------------
         core_ratio = (
             len(matched_core) + 0.5 * len(partial_core)
         ) / max(len(core_skills), 1)
 
         optional_ratio = (
-            len(resume_skills & optional_skills) /
-            max(len(optional_skills), 1)
+            len(normalized_skills & optional_skills)
+            / max(len(optional_skills), 1)
         )
 
         compatibility_score = round(
-            (0.7 * core_ratio + 0.3 * optional_ratio) * 100, 2
+            (0.75 * core_ratio + 0.25 * optional_ratio) * 100, 2
         )
 
-        # -------- Role fit classification --------
-        if core_ratio >= 0.65:
+        # -------------------- 4️⃣ Role Fit Classification --------------------
+        if core_ratio >= 0.7:
             role_fit = "High"
-        elif core_ratio >= 0.35:
+        elif core_ratio >= 0.4:
             role_fit = "Medium"
         else:
             role_fit = "Low"
 
-        # -------- Transition feasibility --------
-        if core_ratio >= 0.4:
+        # -------------------- 5️⃣ Transition Feasibility --------------------
+        if core_ratio >= 0.45:
             transition = "High"
-        elif core_ratio >= 0.2:
+        elif core_ratio >= 0.25:
             transition = "Medium"
         else:
             transition = "Low"
@@ -78,21 +100,23 @@ class RoleCompatibilityAnalyzer:
         }
 
     # ==================================================
-    # 🧠 PHASE 3.1 — MULTI-ROLE FIT ANALYZER
+    # 🔥 MULTI-ROLE ANALYSIS (STABLE)
     # ==================================================
     @staticmethod
-    def analyze_all_roles(resume_skills: set, skill_depths: dict | None = None) -> list[dict]:
-        """
-        Evaluates resume against ALL known roles and ranks them.
-        """
+    def analyze_all_roles(
+        explicit_skills: Set[str],
+        inferred_skills: Set[str],
+        equivalence_map: Dict[str, Set[str]] | None = None
+    ) -> list[dict]:
 
         role_rankings = []
 
         for role in ROLE_PROFILES.keys():
             result = RoleCompatibilityAnalyzer.analyze(
-                resume_skills=resume_skills,
+                explicit_skills=explicit_skills,
+                inferred_skills=inferred_skills,
                 target_role=role,
-                skill_depths=skill_depths
+                equivalence_map=equivalence_map
             )
 
             role_rankings.append({
@@ -104,7 +128,6 @@ class RoleCompatibilityAnalyzer:
                 "transition_feasibility": result["transition_feasibility"]
             })
 
-        # Sort by compatibility score (descending)
         role_rankings.sort(
             key=lambda x: x["compatibility_score"],
             reverse=True
