@@ -1,6 +1,5 @@
 import re
-from pathlib import Path
-from typing import Dict, List
+from typing import Set
 from src.skills.skill_database import SkillDatabase
 
 
@@ -40,72 +39,135 @@ class JDSkillExtractor:
             "statistics": "data analysis",
         }
 
-    def extract_skills(self, jd_input: str) -> Dict[str, List[str]]:
+    # ==================================================
+    # ✅ MAIN EXTRACTION METHOD (ERROR-PROOF)
+    # ==================================================
+    def extract_skills(self, jd_text: str) -> dict:
+        """
+        Extract core and optional skills from a Job Description.
+        Guarantees:
+        - No crashes
+        - No empty unsafe outputs
+        - Entry-level fairness
+        """
 
-        # -------- Load JD --------
-        if Path(jd_input).exists():
-            jd_text = Path(jd_input).read_text(encoding="utf-8")
-        else:
-            jd_text = jd_input
+        # ----------------------------
+        # 0️⃣ ALWAYS-SAFE INITIALIZATION
+        # ----------------------------
+        core_skills: Set[str] = set()
+        optional_skills: Set[str] = set()
+        inferred_from_clusters: Set[str] = set()
 
-        jd_text = jd_text.lower()
+        if not jd_text or not jd_text.strip():
+            return {
+                "core_skills": [],
+                "optional_skills": []
+            }
 
-        core_skills = set()
-        optional_skills = set()
+        jd_text_lower = jd_text.lower()
 
-        current_section = "optional"
+        # ----------------------------
+        # 1️⃣ RAW SKILL DETECTION
+        # ----------------------------
+        detected_skills = self._extract_raw_skills(jd_text_lower)
 
-        # -------- Line-wise parsing --------
-        for line in jd_text.splitlines():
-            line = line.strip()
-            if not line:
-                continue
+        # ----------------------------
+        # 1.5️⃣ DOMAIN-BASED FALLBACK (CRITICAL)
+        # ----------------------------
+        if not detected_skills:
+            domain_fallback = {
+                "analytics": {"data analysis", "reporting"},
+                "engineering": {"python", "sql"},
+                "business": {"business analysis"},
+                "design": {"ux design"}
+            }
 
-            # -------- Section detection --------
-            if any(marker in line for marker in self.CORE_MARKERS):
-                current_section = "core"
-                continue
+            inferred_domain = None
+            if any(k in jd_text_lower for k in ["analysis", "analytics", "reporting"]):
+                inferred_domain = "analytics"
+            elif any(k in jd_text_lower for k in ["engineer", "developer", "backend"]):
+                inferred_domain = "engineering"
+            elif any(k in jd_text_lower for k in ["business", "stakeholder"]):
+                inferred_domain = "business"
+            elif any(k in jd_text_lower for k in ["design", "ux", "ui"]):
+                inferred_domain = "design"
 
-            if any(marker in line for marker in self.OPTIONAL_MARKERS):
-                current_section = "optional"
-                continue
+            fallback_skills = domain_fallback.get(inferred_domain, set())
 
-            # -------- Explicit skill detection --------
-            for skill in self.skill_db.skills.keys():
-                pattern = rf"\b{re.escape(skill)}\b"
-                if re.search(pattern, line):
-                    normalized = self.skill_db.normalize_skill(skill)
+            return {
+                "core_skills": sorted(fallback_skills),
+                "optional_skills": []
+            }
 
-                    if current_section == "core":
-                        core_skills.add(normalized)
-                        optional_skills.discard(normalized)
-                    else:
-                        if normalized not in core_skills:
-                            optional_skills.add(normalized)
+        # ----------------------------
+        # 2️⃣ CORE vs OPTIONAL CLASSIFICATION
+        # ----------------------------
+        for skill in detected_skills:
+            if self._is_core_skill(skill, jd_text_lower):
+                core_skills.add(skill)
+            else:
+                optional_skills.add(skill)
 
-            # -------- JD semantic expansion --------
-            for token, inferred in self.jd_semantic_map.items():
-                if token in line:
-                    if current_section == "core":
-                        core_skills.add(inferred)
-                        optional_skills.discard(inferred)
-                    else:
-                        if inferred not in core_skills:
-                            optional_skills.add(inferred)
+        # ----------------------------
+        # 3️⃣ CLUSTER INFERENCE (SAFE)
+        # ----------------------------
+        if core_skills:
+            inferred_from_clusters = self.skill_db.infer_related_skills(core_skills)
 
-        # -------- JD-side cluster inference --------
-# -------- Domain-safe cluster inference --------
-        jd_domain = self.skill_db.detect_domain(core_skills | optional_skills)
-
-        if jd_domain:
-            inferred_from_clusters = {
-            s for s in self.skill_db.infer_related_skills(core_skills | optional_skills)
-            if self.skill_db.get_domain(s) == jd_domain
-       }
+        # ----------------------------
+        # 4️⃣ MERGE INFERRED CORE SKILLS
+        # ----------------------------
         core_skills |= inferred_from_clusters
 
+        # ----------------------------
+        # 5️⃣ DEDUPLICATION
+        # ----------------------------
+        optional_skills -= core_skills
+
+        # ----------------------------
+        # 6️⃣ FINAL SAFETY GUARD
+        # ----------------------------
+        if not core_skills and optional_skills:
+            promoted = sorted(optional_skills)[0]
+            core_skills.add(promoted)
+            optional_skills.remove(promoted)
 
         return {
             "core_skills": sorted(core_skills),
-            "optional_skills": sorted(optional_skills - core_skills),
+            "optional_skills": sorted(optional_skills)
         }
+
+    # ==================================================
+    # INTERNAL HELPERS
+    # ==================================================
+    def _extract_raw_skills(self, text: str) -> Set[str]:
+        """
+        Extract raw skills using master skill DB + JD semantic aliases
+        """
+        found = set()
+
+        for skill in self.skill_db.skills.keys():
+            if re.search(rf"\b{re.escape(skill)}\b", text):
+                found.add(skill)
+
+        for alias, canonical in self.jd_semantic_map.items():
+            if alias in text:
+                found.add(canonical)
+
+        return found
+
+    def _is_core_skill(self, skill: str, text: str) -> bool:
+        """
+        Decide if a detected skill is core or optional
+        """
+
+        for marker in self.CORE_MARKERS:
+            if marker in text:
+                return True
+
+        for marker in self.OPTIONAL_MARKERS:
+            if marker in text:
+                return False
+
+        # Default: entry-level safe assumption
+        return True

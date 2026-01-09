@@ -1,7 +1,7 @@
-
+# src/api/schemas.py
 
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List, Dict, Any
 
 
 class AnalyzeRequest(BaseModel):
@@ -10,9 +10,12 @@ class AnalyzeRequest(BaseModel):
 
 
 class AnalyzeResponse(BaseModel):
-    match_score: float
-    confidence_score: float
+    final_match: float
+    confidence: float
+    evaluation_mode: str
+    signals: Dict[str, bool]
     matched_skills: List[str]
     missing_skills: List[str]
-    roadmap: Dict
-    explanation: str
+    roadmap: Dict[str, Any]
+    explanation: Dict[str, Any]
+

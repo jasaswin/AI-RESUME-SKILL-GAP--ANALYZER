@@ -47,6 +47,20 @@ class CareerReadinessAnalyzer:
             "Entry-level candidate with strong core foundation; "
             "only trainable skills missing"
         )
+           
+
+           # 🔒 Entry-level fairness override
+        if (
+    jd_level == "entry"
+    and not missing_core_skills
+    and final_score >= 45
+      ):
+         readiness_level = "Trainable"
+         hiring_signal = (
+        "Entry-level candidate meets all core requirements; "
+        "recommended to strengthen supporting skills"
+    )
+
 
 
 
