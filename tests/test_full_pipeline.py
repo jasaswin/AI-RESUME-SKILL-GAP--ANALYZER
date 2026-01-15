@@ -58,31 +58,29 @@ from src.intelligence.resume_quality_scorer import ResumeQualityScorer
 from src.intelligence.resume_signals import ResumeSignalAnalyzer
 from src.intelligence.resume_archetype_detector import ResumeArchetypeDetector
 from src.intelligence.resume_bullet_generator import RuleBasedBulletGenerator
-from src.intelligence.career_readiness import CareerReadinessAnalyzer
 from src.intelligence.resume_rewriter import ResumeRewriter
 from src.intelligence.jd_skill_prioritizer import JDSkillPrioritizer
 from src.intelligence.jd_domain_detector import JDDomainDetector
 
 # ==================================================
-# ROADMAP
+# ROADMAP & CONFIG
 # ==================================================
 from src.roadmap.roadmap_generator import RoadmapGenerator
-
-# ==================================================
-# CONFIG
-# ==================================================
-from src.config.settings import USE_GROQ
 from src.matching.role_profiles import ROLE_PROFILES
 from src.explainability.confidence_score import ConfidenceScorer
 
 
 # ==================================================
-# 1️⃣ RESUME INGESTION
+# 1️⃣ RESUME INGESTION (REAL PDF – EXISTS)
 # ==================================================
-resume_path = "data/resumes/NilimaMishra_Resume_1P.pdf"
+resume_path = Path("data/resumes/NilimaMishra_Resume_1P.pdf")
 
-resume_text = extract_resume_text(resume_path)
-resume_tokens = process_resume(resume_path)
+# resume_text = extract_resume_text(resume_path)
+# resume_tokens = process_resume(resume_path)
+
+resume_text = extract_resume_text(str(resume_path))
+resume_tokens = process_resume(str(resume_path))
+
 
 extractor = ResumeSkillExtractor()
 extracted = extractor.extract(resume_tokens, resume_text)
@@ -178,7 +176,7 @@ gaps = SkillGapIdentifier.identify_gaps(
 
 
 # ==================================================
-# 8️⃣ BULLET GENERATION (GUARDED)
+# 8️⃣ BULLET GENERATION
 # ==================================================
 rule_generator = RuleBasedBulletGenerator()
 bullet_suggestions = []
@@ -207,20 +205,11 @@ rewritten = ResumeRewriter.rewrite(
 
 
 # ==================================================
-# 🔟 ROADMAP (SIMPLIFIED & GUARANTEED)
+# 🔟 ROADMAP
 # ==================================================
-high = []
-medium = []
-low = []
-
-if gaps["missing_core_skills"]:
-    high = gaps["missing_core_skills"][:1]
-elif gaps["missing_optional_skills"]:
-    medium = gaps["missing_optional_skills"][:1]
-
 priority_map = {
-    "high_priority": high,
-    "medium_priority": medium,
+    "high_priority": gaps["missing_core_skills"][:1],
+    "medium_priority": gaps["missing_optional_skills"][:1],
     "low_priority": []
 }
 
@@ -244,7 +233,7 @@ confidence = ConfidenceScorer().compute_confidence(
 
 
 # ==================================================
-# 🔒 FINAL HIRING DECISION (LOCKED)
+# 🔒 FINAL HIRING DECISION
 # ==================================================
 def hiring_decision(score: float) -> str:
     if score >= 60:
@@ -257,7 +246,7 @@ decision = hiring_decision(final_score)
 
 
 # ==================================================
-# 🎯 FINAL OUTPUT (VISUAL)
+# 🎯 FINAL OUTPUT
 # ==================================================
 title("🧠 AI RESUME–JD EVALUATION REPORT")
 
