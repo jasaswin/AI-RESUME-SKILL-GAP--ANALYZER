@@ -1,14 +1,4 @@
 
-// const SkillMatchCard = ({ percentage }) => {
-//   return (
-//     <div>
-//       <h3>Skill Match</h3>
-//       <h1 style={{ color: "#8b5cf6" }}>{percentage}%</h1>
-//     </div>
-//   );
-// };
-
-// export default SkillMatchCard;
 
 
 const SkillMatchCard = ({ percentage }) => {
