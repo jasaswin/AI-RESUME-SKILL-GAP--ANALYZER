@@ -1,43 +1,4 @@
 
-
-// const GapList = ({ gaps }) => {
-//   if (!Array.isArray(gaps)) return null;
-
-//   return (
-//     <div>
-//       <h3>Missing Skills</h3>
-//       <ul>
-//         {gaps.map((skill, index) => (
-//           <li key={index}>{skill}</li>
-//         ))}
-//       </ul>
-//     </div>
-//   );
-// };
-
-// export default GapList;
-
-
-// const GapList = ({ gaps }) => {
-//   if (!Array.isArray(gaps)) return null;
-
-//   return (
-//     <div>
-//       <h3>Skills</h3>
-//       <ul>
-//         {gaps.map((skill, index) => (
-//           <li key={index}>
-//             {typeof skill === "object" ? skill.skill : skill}
-//           </li>
-//         ))}
-//       </ul>
-//     </div>
-//   );
-// };
-
-// export default GapList;
-
-
 const GapList = ({ gaps, title }) => {
   if (!Array.isArray(gaps)) return null;
 
