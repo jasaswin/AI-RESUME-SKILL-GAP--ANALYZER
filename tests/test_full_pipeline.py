@@ -1,7 +1,8 @@
+
 from pathlib import Path
 
 # ==================================================
-# 🧠 CONSOLE UI HELPERS (PURE PRESENTATION LAYER)
+# 🧠 CONSOLE UI HELPERS
 # ==================================================
 def hr():
     print("═" * 54)
@@ -40,6 +41,7 @@ from src.nlp import process_resume
 from src.nlp.resume_text_extractor import extract_resume_text
 from src.skills.resume_skill_extractor import ResumeSkillExtractor
 from src.skills.jd_skill_extractor import JDSkillExtractor
+from src.skills.skill_database import SkillDatabase
 
 # ==================================================
 # MATCHING
@@ -71,16 +73,12 @@ from src.explainability.confidence_score import ConfidenceScorer
 
 
 # ==================================================
-# 1️⃣ RESUME INGESTION (REAL PDF – EXISTS)
+# 1️⃣ RESUME INGESTION
 # ==================================================
-resume_path = Path("data/resumes/NilimaMishra_Resume_1P.pdf")
-
-# resume_text = extract_resume_text(resume_path)
-# resume_tokens = process_resume(resume_path)
+resume_path = "data/resumes/sample_resume.txt"
 
 resume_text = extract_resume_text(str(resume_path))
 resume_tokens = process_resume(str(resume_path))
-
 
 extractor = ResumeSkillExtractor()
 extracted = extractor.extract(resume_tokens, resume_text)
@@ -91,7 +89,7 @@ resume_skills = explicit_skills | inferred_skills
 
 
 # ==================================================
-# 2️⃣ DEPTH + SIGNALS + ARCHETYPE
+# 2️⃣ DEPTH + SIGNALS
 # ==================================================
 skill_depths = SkillDepthEstimator().estimate(resume_text, resume_skills)
 signals = ResumeSignalAnalyzer().analyze(resume_text)
@@ -99,16 +97,7 @@ archetype = ResumeArchetypeDetector.detect(resume_skills)
 
 
 # ==================================================
-# 3️⃣ ROLE COMPATIBILITY
-# ==================================================
-all_roles = RoleCompatibilityAnalyzer.analyze_all_roles(
-    explicit_skills=explicit_skills,
-    inferred_skills=inferred_skills
-)
-
-
-# ==================================================
-# 4️⃣ JD PROCESSING
+# 3️⃣ JD PROCESSING
 # ==================================================
 jd_path = Path("data/job_desc/mern_stack_developer.txt")
 jd_text = jd_path.read_text(encoding="utf-8")
@@ -130,7 +119,7 @@ jd_domain = JDDomainDetector.detect(jd_text)
 
 
 # ==================================================
-# 5️⃣ VECTOR SIMILARITY
+# 4️⃣ VECTOR SIMILARITY
 # ==================================================
 vectorizer = SkillVectorizer()
 vectors = vectorizer.fit_transform([
@@ -150,7 +139,7 @@ tfidf_score = SimilarityCalculator.weighted_similarity_score(
 
 
 # ==================================================
-# 6️⃣ FINAL SCORE
+# 5️⃣ FINAL SCORE
 # ==================================================
 final_score = ScoreCalculator.final_score(
     similarity_score=tfidf_score,
@@ -165,7 +154,7 @@ final_score = ScoreCalculator.final_score(
 
 
 # ==================================================
-# 7️⃣ GAP ANALYSIS
+# 6️⃣ GAP ANALYSIS
 # ==================================================
 gaps = SkillGapIdentifier.identify_gaps(
     explicit_skills=explicit_skills,
@@ -174,50 +163,41 @@ gaps = SkillGapIdentifier.identify_gaps(
     jd_optional=jd_optional
 )
 
-
-# ==================================================
-# 8️⃣ BULLET GENERATION
-# ==================================================
-rule_generator = RuleBasedBulletGenerator()
-bullet_suggestions = []
-
-if gaps["missing_core_skills"]:
-    skill = gaps["missing_core_skills"][0]
-    bullet = rule_generator.generate(
-        gap={"skill": skill, "severity": "High", "type": "core"},
-        section="Skills Section"
-    )
-    bullet_suggestions.append({
-        "resume_bullet": bullet["resume_bullet"],
-        "priority": "High",
-        "section": "Skills Section"
-    })
+missing_required = gaps["missing_core_skills"]
+missing_optional = gaps["missing_optional_skills"]
 
 
 # ==================================================
-# 9️⃣ RESUME REWRITE
+# 7️⃣ BUILD SKILL METADATA (NEW CLEAN PART)
 # ==================================================
-rewritten = ResumeRewriter.rewrite(
-    original_text=resume_text,
-    bullet_suggestions=bullet_suggestions,
-    archetype=archetype
+skill_db = SkillDatabase()
+
+skill_categories = {}
+skill_popularity = {}
+
+all_missing = missing_required + missing_optional
+
+for skill in all_missing:
+    category = skill_db.get_category(skill)
+    skill_categories[skill] = category if category else "tool"
+
+    # simple importance weighting
+    skill_popularity[skill] = 8 if skill in missing_required else 5
+
+
+# ==================================================
+# 8️⃣ ROADMAP (FULL ML VERSION)
+# ==================================================
+roadmap = RoadmapGenerator().generate(
+    missing_required_skills=missing_required,
+    missing_optional_skills=missing_optional,
+    skill_categories=skill_categories,
+    skill_popularity=skill_popularity
 )
 
 
 # ==================================================
-# 🔟 ROADMAP
-# ==================================================
-priority_map = {
-    "high_priority": gaps["missing_core_skills"][:1],
-    "medium_priority": gaps["missing_optional_skills"][:1],
-    "low_priority": []
-}
-
-roadmap = RoadmapGenerator().generate_phase_roadmap(priority_map)
-
-
-# ==================================================
-# 1️⃣1️⃣ QUALITY + CONFIDENCE
+# 9️⃣ QUALITY + CONFIDENCE
 # ==================================================
 quality_score = ResumeQualityScorer().score(
     resume_text=resume_text,
@@ -233,7 +213,7 @@ confidence = ConfidenceScorer().compute_confidence(
 
 
 # ==================================================
-# 🔒 FINAL HIRING DECISION
+# 🔒 FINAL DECISION
 # ==================================================
 def hiring_decision(score: float) -> str:
     if score >= 60:
@@ -246,7 +226,7 @@ decision = hiring_decision(final_score)
 
 
 # ==================================================
-# 🎯 FINAL OUTPUT
+# 🎯 OUTPUT
 # ==================================================
 title("🧠 AI RESUME–JD EVALUATION REPORT")
 
@@ -260,18 +240,13 @@ section("🔍 KEY SIGNALS")
 for k, v in signals.items():
     check(k, v)
 
-if rewritten["skills_section_additions"]:
-    section("🧩 SKILLS TO ADD")
-    for b in rewritten["skills_section_additions"]:
-        print_bullet(b)
+section("📚 ROADMAP")
 
-section("🛠 IMMEDIATE NEXT STEP")
 for phase, steps in roadmap.items():
-    if steps:
-        step = steps[0]
-        print(f"Skill     : {step['skill']}")
-        print(f"Duration  : {step['estimated_weeks']} Weeks")
-        print(f"Resources : {', '.join(step['resources'])}")
-        break
+    print(f"\n{phase}")
+    for step in steps:
+        print(f"  • {step['skill']} ({step['estimated_weeks']} weeks)")
+        print(f"    - {step['reason']}")
+        print(f"    - Resources: {', '.join(step['resources'])}")
 
 hr()

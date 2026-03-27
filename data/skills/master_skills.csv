@@ -1,42 +1,58 @@
 skill,category,domain,base_weight
-
 python,language,engineering,1.0
 java,language,engineering,1.0
 javascript,language,engineering,1.0
+typescript,language,engineering,1.0
 sql,language,engineering,1.0
 html,language,engineering,0.9
 css,language,engineering,0.9
-
+react,framework,engineering,1.1
+nextjs,framework,engineering,1.1
+redux,framework,engineering,1.0
+angular,framework,engineering,1.0
+vue,framework,engineering,1.0
+nodejs,framework,engineering,1.1
+express,framework,engineering,1.1
 django,framework,engineering,1.0
 flask,framework,engineering,1.0
-react,framework,engineering,1.0
-nodejs,framework,engineering,1.0
-
-aws,tool,engineering,0.8
-docker,tool,engineering,0.8
-git,tool,engineering,0.7
-
+spring boot,framework,engineering,1.1
+mongodb,database,engineering,1.1
+postgresql,database,engineering,1.0
+mysql,database,engineering,1.0
+redis,database,engineering,1.0
+aws,tool,engineering,1.2
+docker,tool,engineering,1.2
+kubernetes,tool,engineering,1.3
+ci/cd,tool,engineering,1.1
+github actions,tool,engineering,1.0
+gitlab ci,tool,engineering,1.0
+git,tool,engineering,0.8
+github,tool,engineering,0.8
+rest api,concept,engineering,1.1
+graphql,concept,engineering,1.1
+microservices,concept,engineering,1.2
+system design,concept,engineering,1.3
 machine learning,concept,engineering,1.3
+deep learning,concept,engineering,1.4
 nlp,concept,engineering,1.3
-
+computer vision,concept,engineering,1.3
 data analysis,concept,analytics,1.2
 data visualization,concept,analytics,1.1
 excel,tool,analytics,1.0
 power bi,tool,analytics,1.0
 tableau,tool,analytics,1.0
 reporting,concept,analytics,1.0
-
 ux design,design,design,1.3
 wireframing,design,design,1.1
 prototyping,design,design,1.1
 usability,design,design,1.2
 user research,design,design,1.2
 accessibility,design,design,1.1
-
 figma,tool,design,1.0
 adobe xd,tool,design,1.0
-
 stakeholder management,business,business,1.0
 requirements gathering,business,business,1.0
 process optimization,business,business,1.0
+agile,concept,business,1.0
+scrum,concept,business,1.0
 
