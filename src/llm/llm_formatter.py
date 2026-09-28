@@ -25,7 +25,7 @@ class GroqLLM(BaseLLM):
 
     def generate(self, text: str) -> str:
         completion = self.client.chat.completions.create(
-            model="llama-3.1-8b-instant",
+            model="openai/gpt-oss-20b",
             messages=[
                 {
                     "role": "system",
